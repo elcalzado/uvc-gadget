@@ -141,6 +141,27 @@ create_uvc() {
 	ln -s header/h class/ss
 	cd ../../../
 
+	# Include an Extension Unit if the kernel supports that
+	if [ -d functions/$FUNCTION/control/extensions ]; then
+		mkdir functions/$FUNCTION/control/extensions/xu.0
+		pushd functions/$FUNCTION/control/extensions/xu.0
+
+		# Set the bUnitID of the Processing Unit as the XU's source
+		echo 2 > baSourceID
+
+		# Set this XU as the source for the default output terminal
+		cat bUnitID > ../../terminal/output/default/bSourceID
+
+		# Flag some arbitrary controls. This sets alternating bits of the
+		# first byte of bmControls active.
+		echo 0x55 > bmControls
+
+		# Set the GUID
+		echo -e -n "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10" > guidExtensionCode
+
+		popd
+	fi
+
 	# Set the packet size: uvc gadget max size is 3k...
 	echo 3072 > functions/$FUNCTION/streaming_maxpacket
 	echo 2048 > functions/$FUNCTION/streaming_maxpacket
