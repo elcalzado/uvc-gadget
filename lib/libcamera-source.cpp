@@ -102,7 +102,8 @@ void libcamera_source::outputReady(void *mem, size_t bytesused, int64_t timestam
 	buffer.index = cookie;
 	buffer.mem = mem;
 	buffer.bytesused = bytesused;
-	buffer.timestamp = { timestamp / 1000000, timestamp % 1000000 };
+	buffer.timestamp.tv_sec = timestamp / 1000000;
+	buffer.timestamp.tv_usec = timestamp % 1000000;
 
 	src.handler(src.handler_data, &src, &buffer);
 }
