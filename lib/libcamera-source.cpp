@@ -114,6 +114,13 @@ static void libcamera_source_video_process(void *d)
 	Stream *stream = src->config->at(0).stream();
 	struct video_buffer buffer;
 	Request *request;
+	char buf;
+
+	/*
+	 * We need to perform a read here or the fd will stay active each time
+	 * the event loop cycles.
+	 */
+	read(src->pfds[0], &buf, 1);
 
 	if (src->completed_requests.empty())
 		return;
