@@ -44,47 +44,6 @@ echo "Detecting platform:"
 echo "  board : $BOARD"
 echo "  udc   : $UDC"
 
-create_msd() {
-	# Example usage:
-	#	create_msd <target config> <function name> <image file>
-	#	create_msd configs/c.1 mass_storage.0 /root/backing.img
-	CONFIG=$1
-	FUNCTION=$2
-	BACKING_STORE=$3
-
-	if [ ! -f $BACKING_STORE ]
-	then
-		echo "\tCreating backing file"
-		dd if=/dev/zero of=$BACKING_STORE bs=1M count=32 > /dev/null 2>&1
-		mkfs.ext4 $USBFILE > /dev/null 2>&1
-		echo "\tOK"
-	fi
-
-	echo "\tCreating MSD gadget functionality"
-	mkdir functions/$FUNCTION
-	echo 1 > functions/$FUNCTION/stall
-	echo $BACKING_STORE > functions/$FUNCTION/lun.0/file
-	echo 1 > functions/$FUNCTION/lun.0/removable
-	echo 0 > functions/$FUNCTION/lun.0/cdrom
-
-	ln -s functions/$FUNCTION configs/c.1
-
-	echo "\tOK"
-}
-
-delete_msd() {
-	# Example usage:
-	#	delete_msd <target config> <function name>
-	#	delete_msd config/c.1 uvc.0
-	CONFIG=$1
-	FUNCTION=$2
-
-	echo "Removing Mass Storage interface : $FUNCTION"
-	rm -f $CONFIG/$FUNCTION
-	rmdir functions/$FUNCTION
-	echo "OK"
-}
-
 create_frame() {
 	# Example usage:
 	# create_frame <function name> <width> <height> <format> <name>
@@ -226,7 +185,6 @@ case "$1" in
 	mkdir configs/c.1/strings/0x409
 
 	echo "Creating functions..."
-	#create_msd configs/c.1 mass_storage.0 $USBFILE
 	create_uvc configs/c.1 uvc.0
 	#create_uvc configs/c.1 uvc.1
 	echo "OK"
@@ -256,7 +214,6 @@ case "$1" in
 
 	#delete_uvc configs/c.1 uvc.1
 	delete_uvc configs/c.1 uvc.0
-	#delete_msd configs/c.1 mass_storage.0
 
 	echo "Clearing English strings"
 	rmdir strings/0x409
