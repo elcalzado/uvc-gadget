@@ -30,12 +30,12 @@ case $BOARD in
 		;;
 
 	"TI OMAP4 PandaBoard-ES")
-		UDC=`ls /sys/class/udc` # Should be musb-hdrc.0.auto
+		UDC=$(ls /sys/class/udc) # Should be musb-hdrc.0.auto
 		UDC_ROLE=/dev/null # Not needed - peripheral enabled
 		;;
 
 	*)
-		UDC=`ls /sys/class/udc` # will identify the 'first' UDC
+		UDC=$(ls /sys/class/udc) # will identify the 'first' UDC
 		UDC_ROLE=/dev/null # Not generic
 		;;
 esac
