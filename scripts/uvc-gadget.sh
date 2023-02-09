@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 set -e
-#set -x
 
 CONFIGFS="/sys/kernel/config"
 GADGET="$CONFIGFS/usb_gadget"
@@ -131,8 +130,6 @@ delete_uvc() {
 case "$1" in
     start)
 	echo "Creating the USB gadget"
-	#echo "Loading composite module"
-	#modprobe libcomposite
 
 	echo "Creating gadget directory g1"
 	mkdir -p $GADGET/g1
@@ -163,7 +160,6 @@ case "$1" in
 
 	echo "Creating functions..."
 	create_uvc configs/c.1 uvc.0
-	#create_uvc configs/c.1 uvc.1
 	echo "OK"
 
 	echo "Binding USB Device Controller"
@@ -187,7 +183,6 @@ case "$1" in
 	grep $UDC UDC && echo "" > UDC
 	echo "OK"
 
-	#delete_uvc configs/c.1 uvc.1
 	delete_uvc configs/c.1 uvc.0
 
 	echo "Clearing English strings"
@@ -204,10 +199,6 @@ case "$1" in
 	rmdir g1
 	cd /
 	echo "OK"
-
-	#echo "Disable composite USB gadgets"
-	#modprobe -r libcomposite
-	#echo "OK"
 	;;
     *)
 	echo "Usage : $0 {start|stop}"
