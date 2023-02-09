@@ -10,9 +10,6 @@ PID="0xa4a2"
 SERIAL="0123456789"
 MANUF=$(hostname)
 PRODUCT="UVC Gadget"
-
-USBFILE=/root/usbstorage.img
-
 BOARD=$(strings /proc/device-tree/model)
 UDC=$(ls /sys/class/udc) # will identify the 'first' UDC
 
