@@ -2,7 +2,7 @@
 
 project('uvc-gadget', 'c', 'cpp',
     meson_version : '>= 0.56',
-    version : '0.3.0',
+    version : '0.4.0',
     default_options : [
         'werror=true',
         'warning_level=2',
