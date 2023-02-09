@@ -107,9 +107,17 @@ static void jpg_source_fill_buffer(struct video_source *s,
 				   struct video_buffer *buf)
 {
 	struct jpg_source *src = to_jpg_source(s);
+	unsigned int size;
 
-	memcpy(buf->mem, src->imgdata, src->imgsize);
-	buf->bytesused = src->imgsize;
+	/*
+	 * Nothing currently stops the user from providing a source file which is
+	 * larger than the buffer size calculated from the format we have set.
+	 * Clamp the size of the buffer we copy to be sure we don't overflow the
+	 * buffer we was allocated to receive it.
+	 */
+	size = min(src->imgsize, buf->size);
+	memcpy(buf->mem, src->imgdata, size);
+	buf->bytesused = size;
 
 	/*
 	 * Wait for the timer to elapse to ensure that our configured frame rate

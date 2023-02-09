@@ -323,9 +323,17 @@ static void slideshow_source_fill_buffer(struct video_source *s,
 					 struct video_buffer *buf)
 {
 	struct slideshow_source *src = to_slideshow_source(s);
+	unsigned int size;
 
-	memcpy(buf->mem, src->cur_slide->imgdata, src->cur_slide->imgsize);
-	buf->bytesused = src->cur_slide->imgsize;
+	/*
+	 * Nothing currently stops the user from providing a source file which is
+	 * larger than the buffer size calculated from the format we have set.
+	 * Clamp the size of the buffer we copy to be sure we don't overflow the
+	 * buffer we was allocated to receive it.
+	 */
+	size = min(src->cur_slide->imgsize, buf->size);
+	memcpy(buf->mem, src->cur_slide->imgdata, size);
+	buf->bytesused = size;
 
 	if (src->cur_slide == list_last_entry(&src->slides, struct slide, list))
 		src->cur_slide = list_first_entry(&src->slides, struct slide, list);
