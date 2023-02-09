@@ -15,30 +15,7 @@ PRODUCT="UVC Gadget"
 USBFILE=/root/usbstorage.img
 
 BOARD=$(strings /proc/device-tree/model)
-
-case $BOARD in
-	"Renesas Salvator-X board based on r8a7795 ES1.x")
-		UDC_USB2=e6590000.usb
-		UDC_USB3=ee020000.usb
-
-		UDC_ROLE2=/sys/devices/platform/soc/ee080200.usb-phy/role
-		UDC_ROLE2=/dev/null #Not needed - always peripheral
-		UDC_ROLE3=/sys/devices/platform/soc/ee020000.usb/role
-
-		UDC=$UDC_USB2
-		UDC_ROLE=$UDC_ROLE2
-		;;
-
-	"TI OMAP4 PandaBoard-ES")
-		UDC=$(ls /sys/class/udc) # Should be musb-hdrc.0.auto
-		UDC_ROLE=/dev/null # Not needed - peripheral enabled
-		;;
-
-	*)
-		UDC=$(ls /sys/class/udc) # will identify the 'first' UDC
-		UDC_ROLE=/dev/null # Not generic
-		;;
-esac
+UDC=$(ls /sys/class/udc) # will identify the 'first' UDC
 
 echo "Detecting platform:"
 echo "  board : $BOARD"
@@ -191,8 +168,6 @@ case "$1" in
 
 	echo "Binding USB Device Controller"
 	echo $UDC > UDC
-	echo peripheral > $UDC_ROLE
-	cat $UDC_ROLE
 	echo "OK"
 	;;
 
