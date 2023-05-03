@@ -7,7 +7,10 @@
  * Contact: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
  */
 
+#include <linux/videodev2.h>
+
 #include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -173,12 +176,22 @@ struct video_source *v4l2_video_source_create(const char *devname)
 	src->src.type = VIDEO_SOURCE_DMABUF;
 
 	src->vdev = v4l2_open(devname);
-	if (!src->vdev) {
-		free(src);
-		return NULL;
+	if (!src->vdev)
+		goto err_free_src;
+
+	if (src->vdev->type != V4L2_BUF_TYPE_VIDEO_CAPTURE) {
+		fprintf(stderr, "v4l2 device does not support video capture\n");
+		goto err_close_v4l2;
 	}
 
 	return &src->src;
+
+err_close_v4l2:
+	v4l2_close(src->vdev);
+err_free_src:
+	free(src);
+
+	return NULL;
 }
 
 void v4l2_video_source_init(struct video_source *s, struct events *events)
