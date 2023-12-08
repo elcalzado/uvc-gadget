@@ -131,12 +131,19 @@ bool events_loop(struct events *events)
 		fd_set wfds;
 		fd_set efds;
 		int ret;
+		struct timeval tv;
 
 		rfds = events->rfds;
 		wfds = events->wfds;
 		efds = events->efds;
 
-		ret = select(events->maxfd + 1, &rfds, &wfds, &efds, NULL);
+		/* This 100ms timeout is here to reduce latency on shutdown
+		 * events.
+		 */
+		tv.tv_sec = 0;
+		tv.tv_usec = 100000;
+
+		ret = select(events->maxfd + 1, &rfds, &wfds, &efds, &tv);
 		if (ret < 0) {
 			/* EINTR means that a signal has been received, continue
 			 * to the next iteration in that case.
@@ -148,7 +155,8 @@ bool events_loop(struct events *events)
 			break;
 		}
 
-		events_dispatch(events, &rfds, &wfds, &efds);
+		if (ret > 0)
+			events_dispatch(events, &rfds, &wfds, &efds);
 	}
 
 	return !events->done;
