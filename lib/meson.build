@@ -19,7 +19,7 @@ if libcamera.found()
   libuvcgadget_sources += files(['libcamera-source.cpp'])
 endif
 
-if libjpeg.found() and threads.found()
+if libcamera.found() and libjpeg.found() and threads.found()
   libuvcgadget_sources += files(['mjpeg_encoder.cpp'])
 endif
 
