@@ -80,6 +80,13 @@ char *v4l2_fourcc2s(__u32 fourcc, char *buf)
 	return buf;
 }
 
+static int filter_slides(const struct dirent *entry) {
+    return (
+	strcmp(entry->d_name, ".") != 0 &&
+	strcmp(entry->d_name, "..") != 0
+    );
+}
+
 /*
  * slideshow_source_set_format - set the V4L2 format
  *
@@ -117,12 +124,15 @@ static int slideshow_source_set_format(struct video_source *s,
 	struct slideshow_source *src = to_slideshow_source(s);
 	char dirname[PATH_MAX];
 	struct slide *slide, *next;
+	struct dirent **dir_files;
 	struct dirent *file;
 	char fourcc_buf[8];
 	int fd = -1;
+	int i = 0;
 	char *cwd;
 	DIR *dir;
 	int ret;
+	int n;
 
 	/*
 	 * If the format is changed, we need to clear the existing list of
@@ -165,10 +175,14 @@ static int slideshow_source_set_format(struct video_source *s,
 		goto err_close_dir;
 	}
 
-	while ((file = readdir(dir))) {
-		if (!strcmp(file->d_name, ".") ||
-		    !strcmp(file->d_name, ".."))
-			continue;
+	n = scandir(dirname, &dir_files, filter_slides, alphasort);
+	if (n < 0) {
+		perror("scandir");
+		goto err_close_dir;
+	}
+
+	for (i = 0; i < n; i++) {
+		file = dir_files[i];
 
 		fd = open(file->d_name, O_RDONLY);
 		if (fd == -1) {
