@@ -660,7 +660,7 @@ static int configfs_parse_streaming_format(const char *path,
 	}
 
 	format->num_frames = n_entries;
-	format->frames = calloc(sizeof *format->frames, format->num_frames);
+	format->frames = calloc(format->num_frames, sizeof *format->frames);
 	if (!format->frames)
 		return -ENOMEM;
 
@@ -744,7 +744,7 @@ static int configfs_parse_streaming_header(const char *path,
 	}
 
 	cfg->num_formats = n_entries;
-	cfg->formats = calloc(sizeof *cfg->formats, cfg->num_formats);
+	cfg->formats = calloc(cfg->num_formats, sizeof *cfg->formats);
 	if (!cfg->formats)
 		return -ENOMEM;
 
