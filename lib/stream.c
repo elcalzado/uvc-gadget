@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "events.h"
+#include "gpio.h"
 #include "stream.h"
 #include "uvc.h"
 #include "v4l2.h"
@@ -31,11 +32,33 @@ struct uvc_stream
 	struct uvc_device *uvc;
 
 	struct events *events;
+
+	int active;
+
+	void *frozen_data;
+	size_t frozen_size;
+	int frozen;
+
+	uvc_stream_gpio_cb_t gpio_cb;
+	void *gpio_ud;
 };
 
 /* ---------------------------------------------------------------------------
  * Video streaming
  */
+
+static void uvc_stream_spoof_buffer(void *d, struct video_buffer *buffer)
+{
+	struct uvc_stream *stream = d;
+
+	if (!stream->frozen_data) {
+		stream->frozen_size = buffer->bytesused;
+		stream->frozen_data = malloc(stream->frozen_size);
+		memset(stream->frozen_data, 0, stream->frozen_size);
+	}
+	memcpy(buffer->mem, stream->frozen_data, stream->frozen_size);
+	buffer->bytesused = stream->frozen_size;
+}
 
 static void uvc_stream_source_process(void *d,
 				      struct video_source *src __attribute__((unused)),
@@ -44,6 +67,9 @@ static void uvc_stream_source_process(void *d,
 	struct uvc_stream *stream = d;
 	struct v4l2_device *sink = uvc_v4l2_device(stream->uvc);
 
+	if (stream->frozen)
+		uvc_stream_spoof_buffer(stream, buffer);
+		
 	v4l2_queue_buffer(sink, buffer);
 }
 
@@ -73,6 +99,9 @@ static void uvc_stream_uvc_process_no_buf(void *d)
 		return;
 
 	video_source_fill_buffer(stream->src, &buf);
+
+	if (stream->frozen)
+		uvc_stream_spoof_buffer(stream, &buf);
 
 	v4l2_queue_buffer(sink, &buf);
 }
@@ -280,6 +309,11 @@ void uvc_stream_enable(struct uvc_stream *stream, int enable)
 		uvc_stream_start(stream);
 	else
 		uvc_stream_stop(stream);
+
+	stream->active = enable;
+
+	if (stream->gpio_cb && !stream->frozen)
+		stream->gpio_cb(stream->gpio_ud, STREAMING, enable);
 }
 
 int uvc_stream_set_format(struct uvc_stream *stream,
@@ -304,6 +338,28 @@ int uvc_stream_set_frame_rate(struct uvc_stream *stream, unsigned int fps)
 	return video_source_set_frame_rate(stream->src, fps);
 }
 
+void uvc_stream_set_frozen(void *s, int state)
+{
+	struct uvc_stream *stream = s;
+
+	if (!state && stream->frozen_data) {
+		free(stream->frozen_data);
+		stream->frozen_data = NULL;
+		stream->frozen_size = 0;
+	}
+
+	if (stream->active)
+		stream->gpio_cb(stream->gpio_ud, STREAMING, !state);
+
+	stream->frozen = state;
+}
+
+void uvc_stream_set_gpio_callback(struct uvc_stream *stream, uvc_stream_gpio_cb_t cb, void *ud)
+{
+	stream->gpio_cb = cb;
+	stream->gpio_ud = ud;
+}
+
 /* ---------------------------------------------------------------------------
  * Stream handling
  */
@@ -322,6 +378,9 @@ struct uvc_stream *uvc_stream_new(const char *uvc_device)
 	if (stream->uvc == NULL)
 		goto error;
 
+	stream->active = 0;
+	stream->frozen = 0;
+
 	return stream;
 
 error:
@@ -335,6 +394,9 @@ void uvc_stream_delete(struct uvc_stream *stream)
 		return;
 
 	uvc_close(stream->uvc);
+
+	if (stream->frozen_data)
+		free(stream->frozen_data);
 
 	free(stream);
 }

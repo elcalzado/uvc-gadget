@@ -56,6 +56,7 @@ cc = meson.get_compiler('c')
 libcamera = dependency('libcamera', required : false)
 libjpeg = dependency('libjpeg', required : false)
 threads = dependency('threads', required : false)
+pigpio = cc.find_library('pigpiod_if2', required : false)
 
 conf = configuration_data()
 
@@ -65,6 +66,10 @@ endif
 
 if libjpeg.found() and threads.found()
     conf.set('CONFIG_CAN_ENCODE', true)
+endif
+
+if pigpio.found() and threads.found()
+    conf.set('HAVE_PIGPIO', true)
 endif
 
 configure_file(output : 'config.h', configuration : conf)

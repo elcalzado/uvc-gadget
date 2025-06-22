@@ -16,6 +16,8 @@ struct uvc_stream;
 struct v4l2_pix_format;
 struct video_source;
 
+typedef int (*uvc_stream_gpio_cb_t)(void *userdata, int pin_name, int state);
+
 /*
  * uvc_stream_new - Create a new UVC stream
  * @uvc_device: Filename of UVC device node
@@ -112,5 +114,9 @@ int uvc_stream_set_frame_rate(struct uvc_stream *stream, unsigned int fps);
  * for the @stream. It must not be called directly by applications.
  */
 void uvc_stream_enable(struct uvc_stream *stream, int enable);
+
+void uvc_stream_set_frozen(void *s, int state);
+
+void uvc_stream_set_gpio_callback(struct uvc_stream *stream, uvc_stream_gpio_cb_t cb, void *ud);
 
 #endif /* __STREAM_H__ */

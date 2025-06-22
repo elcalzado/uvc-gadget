@@ -27,7 +27,7 @@ asan: reconfigure
 
 configure: ## Configure the build
 $(BUILDDIR)/build.ninja reconfigure configure:
-	meson $(BUILDDIR) \
+	meson setup $(BUILDDIR) \
 		$(RECONFIGURE) $(ASAN) \
 		-Dprefix=/usr
 

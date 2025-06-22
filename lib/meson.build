@@ -23,9 +23,13 @@ if libcamera.found() and libjpeg.found() and threads.found()
   libuvcgadget_sources += files(['mjpeg_encoder.cpp'])
 endif
 
+if pigpio.found() and threads.found()
+  libuvcgadget_sources += files(['gpio.c'])
+endif
+
 libuvcgadget = shared_library('uvcgadget',
                               libuvcgadget_sources,
-                              dependencies : [libcamera, libjpeg, threads],
+                              dependencies : [libcamera, libjpeg, threads, pigpio],
                               version : uvc_gadget_version,
                               install : true,
                               include_directories : [includes, config_includes])

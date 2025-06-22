@@ -1,26 +1,28 @@
 #!/bin/sh
-# SPDX-License-Identifier: MIT
 
 set -e
+
+# Variables we need to make things easier later on.
 
 CONFIGFS="/sys/kernel/config"
 GADGET="$CONFIGFS/usb_gadget"
 VID="0x0525"
-PID="0xa4a2"
+PID="0xdead"
 SERIAL="0123456789"
 MANUF=$(hostname)
-PRODUCT="UVC Gadget"
+PRODUCT="Webcam Pi"
 BOARD=$(strings /proc/device-tree/model)
-UDC=$(ls /sys/class/udc) # will identify the 'first' UDC
+UDC=`ls /sys/class/udc` # will identify the 'first' UDC
 
 echo "Detecting platform:"
-echo "  board : $BOARD"
-echo "  udc   : $UDC"
+echo "	board : $BOARD"
+echo "	udc   : $UDC"
 
+# Later on, this function is used to tell the usb subsystem that we want
+# to support a particular format, framesize and frameintervals
 create_frame() {
 	# Example usage:
-	# create_frame <function name> <width> <height> <format> <name>
-
+	#	create_frame <function name> <width> <height> <format> <name> <intervals>
 	FUNCTION=$1
 	WIDTH=$2
 	HEIGHT=$3
@@ -34,12 +36,12 @@ create_frame() {
 	echo $HEIGHT > $wdir/wHeight
 	echo $(( $WIDTH * $HEIGHT * 2 )) > $wdir/dwMaxVideoFrameBufferSize
 	cat <<EOF > $wdir/dwFrameInterval
-666666
-100000
-5000000
+$6
 EOF
 }
 
+# This function sets up the UVC gadget function in configfs and binds us
+# to the UVC gadget driver.
 create_uvc() {
 	# Example usage:
 	#	create_uvc <target config> <function name>
@@ -50,12 +52,46 @@ create_uvc() {
 	echo "	Creating UVC gadget functionality : $FUNCTION"
 	mkdir functions/$FUNCTION
 
-	create_frame $FUNCTION 640 360 uncompressed u
-	create_frame $FUNCTION 1280 720 uncompressed u
-	create_frame $FUNCTION 320 180 uncompressed u
-	create_frame $FUNCTION 1920 1080 mjpeg m
-	create_frame $FUNCTION 640 480 mjpeg m
-	create_frame $FUNCTION 640 360 mjpeg m
+	echo "Renaming function"
+	echo -n $PRODUCT > functions/$FUNCTION/function_name
+
+	create_frame $FUNCTION 640 480 uncompressed u "333333
+416667
+500000
+666666
+1000000
+1333333
+2000000
+"
+	create_frame $FUNCTION 1280 720 uncompressed u "1000000
+1333333
+2000000
+"
+	create_frame $FUNCTION 1920 1080 uncompressed u "2000000"
+	create_frame $FUNCTION 640 480 mjpeg m "333333
+416667
+500000
+666666
+1000000
+1333333
+2000000
+"
+	create_frame $FUNCTION 1280 720 mjpeg m "333333
+416667
+500000
+666666
+1000000
+1333333
+2000000
+"
+	create_frame $FUNCTION 1920 1080 mjpeg m "333333
+416667
+500000
+666666
+1000000
+1333333
+2000000
+"
 
 	mkdir functions/$FUNCTION/streaming/header/h
 	cd functions/$FUNCTION/streaming/header/h
@@ -94,14 +130,15 @@ create_uvc() {
 		popd
 	fi
 
-	# Set the packet size: uvc gadget max size is 3k...
-	echo 3072 > functions/$FUNCTION/streaming_maxpacket
+	# This configures the USB endpoint to allow 32x 1024 byte packets per
+	# microframe. Other valid values are 1024 and 3072.
 	echo 2048 > functions/$FUNCTION/streaming_maxpacket
-	echo 1024 > functions/$FUNCTION/streaming_maxpacket
 
 	ln -s functions/$FUNCTION configs/c.1
 }
 
+# This function deletes the UVC gadget functionality from configfs and
+# unbinds us from the UVC gadget driver.
 delete_uvc() {
 	# Example usage:
 	#	delete_uvc <target config> <function name>
@@ -125,18 +162,23 @@ delete_uvc() {
 }
 
 case "$1" in
-    start)
+	start)
 	echo "Creating the USB gadget"
+
+	if ! grep -q libcomposite /lib/modules/$(uname -r)/modules.builtin; then
+		echo "Loading composite module"
+		modprobe libcomposite
+	fi
 
 	echo "Creating gadget directory g1"
 	mkdir -p $GADGET/g1
 
 	cd $GADGET/g1
 	if [ $? -ne 0 ]; then
-	    echo "Error creating usb gadget in configfs"
-	    exit 1;
+		echo "Error creating usb gadget in configfs"
+		exit 1;
 	else
-	    echo "OK"
+		echo "OK"
 	fi
 
 	echo "Setting Vendor and Product ID's"
@@ -164,7 +206,7 @@ case "$1" in
 	echo "OK"
 	;;
 
-    stop)
+	stop)
 	echo "Stopping the USB gadget"
 
 	set +e # Ignore all errors here on a best effort
@@ -172,8 +214,8 @@ case "$1" in
 	cd $GADGET/g1
 
 	if [ $? -ne 0 ]; then
-	    echo "Error: no configfs gadget found"
-	    exit 1;
+		echo "Error: no configfs gadget found"
+		exit 1;
 	fi
 
 	echo "Unbinding USB Device Controller"
@@ -197,6 +239,6 @@ case "$1" in
 	cd /
 	echo "OK"
 	;;
-    *)
+	*)
 	echo "Usage : $0 {start|stop}"
 esac
