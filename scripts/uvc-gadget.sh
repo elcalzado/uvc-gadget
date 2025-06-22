@@ -112,7 +112,8 @@ create_uvc() {
 	# Include an Extension Unit if the kernel supports that
 	if [ -d functions/$FUNCTION/control/extensions ]; then
 		mkdir functions/$FUNCTION/control/extensions/xu.0
-		pushd functions/$FUNCTION/control/extensions/xu.0
+		OLDPWD=$(pwd)
+		cd functions/$FUNCTION/control/extensions/xu.0
 
 		# Set the bUnitID of the Processing Unit as the XU's source
 		echo 2 > baSourceID
@@ -127,7 +128,7 @@ create_uvc() {
 		# Set the GUID
 		echo -e -n "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10" > guidExtensionCode
 
-		popd
+		cd $OLDPWD
 	fi
 
 	# This configures the USB endpoint to allow 32x 1024 byte packets per
