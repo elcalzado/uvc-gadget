@@ -1,6 +1,10 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
  * GPIO control
+ *
+ * Copyright (C) 2025 Elias Calzado Carvajal
  */
+
 #ifndef __GPIO_H__
 #define __GPIO_H__
 

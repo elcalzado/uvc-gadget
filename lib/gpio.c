@@ -1,6 +1,10 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
  * GPIO control
+ *
+ * Copyright (C) 2025 Elias Calzado Carvajal
  */
+
 #include <pigpiod_if2.h>
 #include <stdio.h>
 #include <stdlib.h>
