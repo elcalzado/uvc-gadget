@@ -10,7 +10,7 @@ VID="0x0525"
 PID="0xdead"
 SERIAL="0123456789"
 MANUF=$(hostname)
-PRODUCT="Webcam Pi"
+PRODUCT="UVC Gadget"
 BOARD=$(strings /proc/device-tree/model)
 UDC=`ls /sys/class/udc` # will identify the 'first' UDC
 
